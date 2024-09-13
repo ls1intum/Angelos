@@ -34,7 +34,7 @@ def ask_llm_to_classify(question, study_programs):
         Given the following question: "{question}", please determine if it is specific to any of the following study programs:
         {study_programs_str}.
         
-        If it is specific to one of the study programs, respond with the name of the program. If it is general and not specific to any, respond with 'general'.
+        If it is specific to one of the study programs, respond with the name of the program. If the student studies Master Wirtschaftsinformatik, respond with Master Information Systems. If it is general and not specific to any, respond with 'general'.
         """}
     ]
 

@@ -1,3 +1,4 @@
 .env
 rag-venv
 .DS_Store
+.vscode/

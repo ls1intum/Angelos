@@ -11,4 +11,3 @@ bs4
 chromadb
 pypdf
 cryptography
-

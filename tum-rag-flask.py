@@ -37,6 +37,9 @@ vectorstores = initialize_vectorstores(knowledge_folder, openai_api_key=openai_a
 def format_context(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
+def get_context_list(docs):
+    return [doc.page_content for doc in docs]
+
 # Function to handle the retrieval based on classification
 def get_relevant_context(question, classification):
     """
@@ -45,15 +48,18 @@ def get_relevant_context(question, classification):
     general_retriever = vectorstores["general"].as_retriever(search_kwargs={"k": 5})
     general_docs = general_retriever.get_relevant_documents(question)
     general_context = format_context(general_docs)
-
+    general_context_list = get_context_list(general_docs)
     specific_context = ""
+    specific_context_list = []
+    
     if classification != "general":
         # Fetch from the specific vector store
         specific_retriever = vectorstores[classification].as_retriever(search_kwargs={"k": 5})
         specific_docs = specific_retriever.get_relevant_documents(question)
         specific_context = format_context(specific_docs)
+        specific_context_list = get_context_list(specific_docs)
 
-    return general_context, specific_context
+    return general_context, specific_context, general_context_list, specific_context_list
 
 # Example prompt template that incorporates both general and specific contexts
 prompt_template = """You are an assistant helping TUM students with questions about their studies.
@@ -90,7 +96,7 @@ def handle_question(question, base_folder):
     classification = classify_question(question, base_folder)
 
     # Get the relevant context based on the classification
-    general_context, specific_context = get_relevant_context(question, classification)
+    general_context, specific_context, general_context_list, specific_context_list = get_relevant_context(question, classification)
 
     # Prepare the final prompt
     prompt_text = prompt.format(
@@ -103,7 +109,7 @@ def handle_question(question, base_folder):
 
     # Generate the answer
     response = llm.invoke(prompt_text)
-    return response.content
+    return response.content, general_context_list, specific_context_list
 
 # Flask route for handling questions
 @app.route('/ask', methods=['POST'])
@@ -114,9 +120,9 @@ def ask():
         return jsonify({"error": "No question provided"}), 400
 
     logging.info(f"Received question: {question}")
-    answer = handle_question(question, current_dir)
+    answer, general_context, specific_context = handle_question(question, current_dir)
     logging.info(f"Generated answer: {answer}")
-    return jsonify({"answer": answer})
+    return jsonify({"answer": answer, "general_context": general_context, "specific_context": specific_context})
 
 if __name__ == "__main__":
     logging.info("Starting Flask server...")
